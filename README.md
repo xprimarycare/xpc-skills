@@ -10,26 +10,52 @@ Rather than testing knowledge, skill cards track real-world exposure: for a give
 
 Each item on a skill card represents a discrete clinical microskill tied to actual patient encounters, giving a longitudinal view of capability as it develops over time.
 
-## Skill Card Sections
+## Example Type 2 Diabetes Skill Card
+https://xprimarycare.github.io/xpc-skills/skill-card.html
 
-- History
-- Focused ROS
-- Social History
-- Family History
-- Medical History
-- Surgeries
-- Hospitalizations
-- OTC
-- Exam
-- Common Comorbidities
-- Cardiac Diagnostics
-- Labs
-- Imaging
-- Preventive Care
-- Immunizations
-- Specialist Co-management
-- Risk Calculators
-- Goal-directed Medical Therapy
-- Medications
-- Wearables
-- Supplies
+## How to Contribute
+Request access to [Skill Card template on Google Docs]([url](https://docs.google.com/document/d/1SLJdoAVPNSXFbzPIR6bZRgwWcsUpZcYqyzxywuWVWXI/edit?tab=t.0)) for editing, or download skill-card-template.md, fill it out, and submit a PR to main.
+
+## Skill Card Sections
+History
+
+Focused ROS
+
+Social History
+
+Family History
+
+Medical History
+
+Surgeries
+
+Hospitalizations
+
+OTC
+
+Exam
+
+Common comorbidities
+
+Cardiac diagnostics
+
+Labs
+
+Imaging
+
+Preventive Care
+
+Immunizations
+
+Specialist co-management
+
+Risk calculators
+
+Goal-directed medical therapy
+
+Medications
+
+Wearables
+
+Supplies
+
