@@ -14,7 +14,7 @@ Each item on a skill card represents a discrete clinical microskill tied to actu
 https://xprimarycare.github.io/xpc-skills/skill-card.html
 
 ## How to Contribute
-Request access to [Skill Card template on Google Docs]([url](https://docs.google.com/document/d/1SLJdoAVPNSXFbzPIR6bZRgwWcsUpZcYqyzxywuWVWXI/edit?tab=t.0)) for editing, or download skill-card-template.md, fill it out, and submit a PR to main.
+Request access to [Skill Card template on Google Docs](https://docs.google.com/document/d/1SLJdoAVPNSXFbzPIR6bZRgwWcsUpZcYqyzxywuWVWXI/edit?tab=t.0) for editing, or download skill-card-template.md, fill it out, and submit a PR to main.
 
 ## Skill Card Sections
 History
