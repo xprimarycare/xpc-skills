@@ -1,4 +1,6 @@
-# XPC Skill Card
+# Building Primary Care Skills
+
+This is an open-source project to facilitate the development of fundamental primary care skills. It's a collaboration between primary care physicians and specialists to advance the quality of care.
 
 ## Overview
 
