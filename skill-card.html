@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabetes Skill Card (T2DM)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div class="max-w-6xl mx-auto p-6">
+
+    <!-- Top Card (modeled after attachment) -->
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm p-6 md:p-8">
+
+      <!-- Header row -->
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <!-- Left title -->
+        <div class="min-w-0">
+          <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-2xl bg-indigo-600/10 grid place-items-center">
+              <!-- document icon -->
+              <svg class="h-6 w-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/>
+                <path d="M8 13h8"/>
+                <path d="M8 17h8"/>
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-3xl md:text-4xl font-semibold tracking-tight truncate">Type 2 Diabetes</h1>
+            </div>
+          </div>
+
+
+          <!-- Toast -->
+          <div id="toast" class="hidden mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"></div>
+        </div>
+
+        <!-- Right exposure card -->
+        <div class="w-full lg:w-[28rem] rounded-3xl border border-slate-200 bg-slate-50 p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <div id="tierLabel" class="text-xs font-semibold tracking-[0.25em] text-slate-500">CLINICAL EXPERIENCE</div>
+              <div id="tierName" class="mt-2 text-3xl font-semibold">Foundational</div>
+              <div class="mt-2 text-sm text-slate-500">
+                <span class="font-medium text-slate-700"><span id="score">0</span></span>
+                <span class="text-slate-400">/</span>
+                <span id="maxScore">0</span> points
+                <span class="text-slate-400">•</span>
+                <span id="checkedCount">0</span>/<span id="itemCount">0</span> items
+              </div>
+            </div>
+
+            <!-- Donut -->
+            <div class="relative h-24 w-24 shrink-0">
+              <svg class="h-24 w-24 -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#E2E8F0" stroke-width="10" />
+                <circle id="donut" cx="60" cy="60" r="48" fill="none" stroke="#0F172A" stroke-width="10" stroke-linecap="round" stroke-dasharray="301.59" stroke-dashoffset="301.59" />
+              </svg>
+              <div class="absolute inset-0 grid place-items-center">
+                <div class="text-xl font-semibold"><span id="percent">0</span>%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Micro controls -->
+          <div class="mt-5 flex items-center gap-3">
+            <span class="text-sm text-slate-600">Show missing only</span>
+            <button id="missingToggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200 transition" aria-pressed="false">
+              <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition translate-x-1" data-knob></span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <div class="text-sm font-medium text-slate-500">Number of patients</div>
+          <input id="meta_patients" type="number" min="0" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300" value="0" />
+        </div>
+        <div>
+          <div class="text-sm font-medium text-slate-500">Number of encounters</div>
+          <input id="meta_encounters" type="number" min="0" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300" value="0" />
+        </div>
+        <div>
+          <div class="text-sm font-medium text-slate-500">Illness Severity [highest A1c]</div>
+          <input id="meta_severity" type="text" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300" placeholder="e.g. 13.0%" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sections -->
+    <div id="sections" class="mt-6 space-y-4"></div>
+  </div>
+
+  <script>
+    // -------------------------------
+    // Rubric definition
+    // -------------------------------
+    const RUBRIC = [
+      { id: "history", title: "History", items: [
+        { id: "hx_glucose_log", label: "Glucose log", points: 1 },
+        { id: "hx_foot_inspection", label: "Foot inspection", points: 1 },
+        { id: "hx_med_adherence", label: "Medication adherence", points: 1 },
+        { id: "hx_diet", label: "Diet", points: 1 },
+        { id: "hx_activity", label: "Activity", points: 1 },
+      ]},
+      { id: "focused_ros", title: "Focused ROS", items: [
+        { id: "ros_extremity", label: "Extremity: burning, numbness or tingling", points: 1 },
+        { id: "ros_eyes", label: "Eyes: vision changes", points: 1 },
+        { id: "ros_gu", label: "GU: urinary changes", points: 1 },
+        { id: "ros_endo", label: "Endo: thirst changes", points: 1 },
+      ]},
+      { id: "social_hx", title: "Social history", items: [
+        { id: "shx_tobacco", label: "Tobacco use", points: 1 },
+      ]},
+      { id: "family_hx", title: "Family history", items: [
+        { id: "fhx_hd_dm", label: "Heart disease, diabetes", points: 1 },
+      ]},
+      { id: "medical_hx", title: "Medical history", items: [
+        { id: "pmh_foot_ulcers", label: "Foot ulcers or infections", points: 1 },
+      ]},
+      { id: "surgeries", title: "Surgeries", items: [
+        { id: "surg_amputations", label: "Amputations", points: 1 },
+      ]},
+      { id: "hospitalizations", title: "Hospitalizations", items: [
+        { id: "hosp_dka", label: "DKA", points: 1 },
+      ]},
+      { id: "otc_meds", title: "OTC medications", items: [
+        { id: "otc_nsaids", label: "NSAIDs", points: 1 },
+      ]},
+      { id: "exam", title: "Exam", items: [
+        { id: "exam_foot", label: "Foot exam (sensation, toenails)", points: 1 },
+      ]},
+      { id: "comorbidities", title: "Common comorbidities", items: [
+        { id: "com_depression", label: "Depression", points: 1 },
+        { id: "com_ckd", label: "CKD", points: 1 },
+        { id: "com_hld", label: "HLD", points: 1 },
+        { id: "com_hf", label: "HF", points: 1 },
+        { id: "com_cad", label: "CAD", points: 1 },
+        { id: "com_htn", label: "HTN", points: 1 },
+        { id: "com_nafld", label: "NAFLD", points: 1 },
+        { id: "com_obesity", label: "Obesity", points: 1 },
+        { id: "com_metsyn", label: "Metabolic syndrome", points: 1 },
+      ]},
+      { id: "cardiac_dx", title: "Cardiac diagnostics", items: [
+        { id: "dx_ekg", label: "EKG", points: 1 },
+      ]},
+      { id: "labs", title: "Labs", items: [
+        { id: "lab_a1c", label: "A1c", points: 1 },
+        { id: "lab_cmp", label: "CMP", points: 1 },
+        { id: "lab_uacr", label: "UACR", points: 1 },
+        { id: "lab_lipids", label: "Lipid Panel", points: 1 },
+        { id: "lab_cbc", label: "CBC", points: 1 },
+        { id: "lab_ua", label: "UA", points: 1 },
+        { id: "lab_b12", label: "B12 (if on long-term metformin)", points: 1 },
+      ]},
+      { id: "imaging", title: "Imaging", items: [
+        { id: "img_na", label: "N/A", points: 1 },
+      ]},
+      { id: "preventive", title: "Preventive care", items: [
+        { id: "prev_retinopathy", label: "Diabetic retinopathy screening", points: 1 },
+        { id: "prev_phq9", label: "PHQ9", points: 1 },
+      ]},
+      { id: "immunizations", title: "Immunizations", items: [
+        { id: "imm_pneumovax", label: "Pneumovax", points: 1 },
+        { id: "imm_hepb", label: "Hep B", points: 1 },
+        { id: "imm_flu", label: "Flu", points: 1 },
+      ]},
+      { id: "specialists", title: "Specialist co-management", items: [
+        { id: "spec_endo", label: "Endocrinologist", points: 1 },
+        { id: "spec_neph", label: "Nephrology", points: 1 },
+        { id: "spec_podiatry", label: "Podiatry", points: 1 },
+        { id: "spec_ophtho", label: "Ophthalmology", points: 1 },
+      ]},
+      { id: "risk_calcs", title: "Risk calculators", items: [
+        { id: "risk_ascvd", label: "ASCVD Risk", points: 1 },
+      ]},
+      { id: "gdmt", title: "GDMT", items: [
+        { id: "gdmt_statin", label: "Statins", points: 1 },
+        { id: "gdmt_ace_arb", label: "ACE/ARB", points: 1 },
+        { id: "gdmt_asa", label: "ASA", points: 1 },
+      ]},
+      { id: "med_experience", title: "Medication Experience", items: [
+        { id: "med_metformin", label: "Metformin", points: 1 },
+        { id: "med_glp1", label: "GLP1", points: 1 },
+        { id: "med_insulin", label: "Insulin", points: 1 },
+      ]},
+      { id: "wearables", title: "Wearables", items: [
+        { id: "wear_cgm", label: "CGM", points: 1 },
+      ]},
+      { id: "supplies", title: "Supplies", items: [
+        { id: "sup_glucometer", label: "Glucometer", points: 1 },
+        { id: "sup_lancets", label: "Lancets", points: 1 },
+        { id: "sup_test_strips", label: "Test strips", points: 1 },
+      ]},
+    ];
+
+    // -------------------------------
+    // Tier logic (3 tiers)
+    // -------------------------------
+    const TIER_THRESHOLDS = { foundationalMax: 33, proficientMax: 66 };
+
+    function computeTier(percent) {
+      if (percent <= TIER_THRESHOLDS.foundationalMax) return { level: 1, label: "CLINICAL EXPERIENCE", name: "Foundational" };
+      if (percent <= TIER_THRESHOLDS.proficientMax) return { level: 2, label: "CLINICAL EXPERIENCE", name: "Proficient" };
+      return { level: 3, label: "CLINICAL EXPERIENCE", name: "Advanced" };
+    }
+
+    // -------------------------------
+    // State
+    // -------------------------------
+    const STORAGE_KEY = "t2dm_skill_card_v6";
+
+    // Mock data (shown on first load; after that localStorage persists the user's edits)
+    const MOCK_CHARTS = [
+      { id: "c1", chartId: "Chart #10021", date: "2025-12-28", url: "https://example.com/chart/10021", createdAt: 1 },
+      { id: "c2", chartId: "Chart #10044", date: "2026-01-03", url: "https://example.com/chart/10044", createdAt: 2 },
+      { id: "c3", chartId: "Chart #10077", date: "2026-01-08", url: "https://example.com/chart/10077", createdAt: 3 },
+      { id: "c4", chartId: "Chart #10102", date: "2026-01-12", url: "https://example.com/chart/10102", createdAt: 4 },
+      { id: "c5", chartId: "Chart #10118", date: "2026-01-15", url: "https://example.com/chart/10118", createdAt: 5 },
+    ];
+
+    const MOCK_ITEM_CHARTS = {
+      // History
+      hx_glucose_log: ["c1", "c3"],
+      hx_foot_inspection: ["c2", "c5"],
+      hx_med_adherence: ["c2"],
+      hx_diet: ["c4"],
+      hx_activity: ["c3"],
+      // Focused ROS
+      ros_extremity: ["c3"],
+      ros_eyes: ["c1"],
+      ros_gu: ["c4"],
+      ros_endo: ["c2"],
+      // Social history
+      shx_tobacco: ["c2"],
+      // Family history
+      fhx_hd_dm: ["c1", "c3"],
+      // Medical history
+      pmh_foot_ulcers: ["c5"],
+      // Surgeries
+      surg_amputations: ["c5"],
+      // Hospitalizations
+      hosp_dka: ["c4"],
+      // OTC medications
+      otc_nsaids: ["c2"],
+      // Exam
+      exam_foot: ["c5"],
+      // Comorbidities
+      com_depression: ["c3"],
+      com_ckd: ["c4"],
+      com_hld: ["c1", "c2"],
+      com_htn: ["c1", "c2", "c4"],
+      com_obesity: ["c3"],
+      // Cardiac diagnostics
+      dx_ekg: ["c1"],
+      // Labs
+      lab_a1c: ["c1", "c4"],
+      lab_cmp: ["c2", "c3"],
+      lab_uacr: ["c4"],
+      lab_lipids: ["c1"],
+      lab_cbc: ["c2"],
+      // Preventive care
+      prev_retinopathy: ["c5"],
+      prev_phq9: ["c3"],
+      // Immunizations
+      imm_flu: ["c2"],
+      imm_pneumovax: ["c1"],
+      // Specialists
+      spec_ophtho: ["c5"],
+      // Risk calculators
+      risk_ascvd: ["c1"],
+      // GDMT
+      gdmt_statin: ["c2"],
+      gdmt_ace_arb: ["c4"],
+      // Medication Experience
+      med_metformin: ["c1", "c2", "c3"],
+      med_glp1: ["c4"],
+      med_insulin: ["c5"],
+      // Wearables
+      wear_cgm: ["c3"],
+      // Supplies
+      sup_glucometer: ["c1"],
+      sup_test_strips: ["c1"],
+      sup_lancets: ["c1"],
+    };
+
+    const MOCK_CHECKED = Object.fromEntries(
+      Object.keys(MOCK_ITEM_CHARTS).map((k) => [k, true])
+    );
+
+    const DEFAULT_STATE = {
+      checked: {},
+      expanded: {},
+      filters: { q: "", missingOnly: false },
+      meta: { patients: "12", encounters: "47", severity: "13.0%" },
+      charts: [],
+      itemCharts: {},
+    };
+
+    function seedMockState() {
+      const s = structuredClone(DEFAULT_STATE);
+      s.charts = structuredClone(MOCK_CHARTS);
+      s.itemCharts = structuredClone(MOCK_ITEM_CHARTS);
+      s.checked = structuredClone(MOCK_CHECKED);
+      return s;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return seedMockState();
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(DEFAULT_STATE),
+          ...parsed,
+          checked: { ...DEFAULT_STATE.checked, ...(parsed.checked || {}) },
+          expanded: { ...DEFAULT_STATE.expanded, ...(parsed.expanded || {}) },
+          filters: { ...DEFAULT_STATE.filters, ...(parsed.filters || {}) },
+          meta: { ...DEFAULT_STATE.meta, ...(parsed.meta || {}) },
+          charts: Array.isArray(parsed.charts) ? parsed.charts : [],
+          itemCharts: { ...DEFAULT_STATE.itemCharts, ...(parsed.itemCharts || {}) },
+        };
+      } catch {
+        return seedMockState();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    let state = loadState();
+
+    // Seed defaults
+    for (const sec of RUBRIC) {
+      if (state.expanded[sec.id] === undefined) state.expanded[sec.id] = true;
+      for (const it of sec.items) {
+        if (state.checked[it.id] === undefined) state.checked[it.id] = false;
+        if (!Array.isArray(state.itemCharts[it.id])) state.itemCharts[it.id] = [];
+      }
+    }
+
+    // -------------------------------
+    // Helpers
+    // -------------------------------
+    const $ = (id) => document.getElementById(id);
+
+    function normalize(s) { return (s || "").toLowerCase().trim(); }
+
+    function getAllItems() { return RUBRIC.flatMap((s) => s.items); }
+
+    function computeScores() {
+      const items = getAllItems();
+      const maxScore = items.reduce((sum, it) => sum + (it.points ?? 1), 0);
+      const score = items.reduce((sum, it) => sum + (state.checked[it.id] ? (it.points ?? 1) : 0), 0);
+      const checkedCount = items.filter((it) => state.checked[it.id]).length;
+      const itemCount = items.length;
+      const percent = maxScore ? Math.round((score / maxScore) * 100) : 0;
+      return { score, maxScore, checkedCount, itemCount, percent };
+    }
+
+    function sectionStats(section) {
+      const total = section.items.length;
+      const checked = section.items.filter((it) => state.checked[it.id]).length;
+      return { checked, total };
+    }
+
+    function matchesFilters(label) {
+      const q = normalize(state.filters.q);
+      if (!q) return true;
+      return normalize(label).includes(q);
+    }
+
+    function isVisibleItem(it) {
+      if (!matchesFilters(it.label)) return false;
+      if (state.filters.missingOnly && state.checked[it.id]) return false;
+      return true;
+    }
+
+    // Donut constants
+    const R = 48;
+    const CIRC = 2 * Math.PI * R;
+
+    function uid() { return Math.random().toString(16).slice(2) + Date.now().toString(16); }
+
+    function prettyDate(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso + "T00:00:00");
+        return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      } catch {
+        return iso;
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(s) { return escapeHtml(s).replaceAll("`", "&#096;"); }
+
+    function chartIndexMap() {
+      const ordered = [...state.charts].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      const map = new Map();
+      ordered.forEach((c, i) => map.set(c.id, i + 1));
+      return { ordered, map };
+    }
+
+    function itemHasAtLeastOneRef(itemId, chartIdSet) {
+      const refs = state.itemCharts[itemId] || [];
+      for (const cid of refs) {
+        if (chartIdSet.has(cid)) return true;
+      }
+      return false;
+    }
+
+    // -------------------------------
+    // Toast
+    // -------------------------------
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.add("hidden");
+        el.textContent = "";
+      }, 2800);
+    }
+
+    // -------------------------------
+    // Reference option rendering
+    // -------------------------------
+    function renderRefOption(itId, chart, n, isOn) {
+      const line = `${escapeHtml(chart.chartId || "Chart")}${chart.date ? " · " + escapeHtml(prettyDate(chart.date)) : ""}`;
+      return `
+        <label class="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-slate-50">
+          <input type="checkbox" data-ref-item="${itId}" data-ref-chart="${chart.id}" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300" ${isOn ? "checked" : ""} />
+          <div class="flex-1 min-w-0">
+            <div class="text-xs text-slate-900">
+              <span class="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-2 rounded-full bg-slate-900 text-white text-[10px] font-semibold">${n}</span>
+              <span class="ml-2 font-medium">${line}</span>
+            </div>
+            ${chart.url ? `<div class="mt-1 text-[11px]"><a class="text-indigo-600 hover:underline break-all" href="${escapeAttr(chart.url)}" target="_blank" rel="noreferrer">Open link</a></div>` : ""}
+          </div>
+        </label>
+      `;
+    }
+
+    // -------------------------------
+    // UI Rendering
+    // -------------------------------
+    function render() {
+      const { score, maxScore, checkedCount, itemCount, percent } = computeScores();
+
+      $("score").textContent = String(score);
+      $("maxScore").textContent = String(maxScore);
+      $("checkedCount").textContent = String(checkedCount);
+      $("itemCount").textContent = String(itemCount);
+      $("percent").textContent = String(percent);
+
+      const tier = computeTier(percent);
+      $("tierLabel").textContent = tier.label;
+      $("tierName").textContent = tier.name;
+
+      const donut = $("donut");
+      donut.setAttribute("stroke-dasharray", String(CIRC));
+      donut.setAttribute("stroke-dashoffset", String(CIRC - (CIRC * percent) / 100));
+
+      const toggle = $("missingToggle");
+      const knob = toggle.querySelector("[data-knob]");
+      if (state.filters.missingOnly) {
+        toggle.classList.remove("bg-slate-200");
+        toggle.classList.add("bg-slate-900");
+        knob.classList.remove("translate-x-1");
+        knob.classList.add("translate-x-5");
+        toggle.setAttribute("aria-pressed", "true");
+      } else {
+        toggle.classList.add("bg-slate-200");
+        toggle.classList.remove("bg-slate-900");
+        knob.classList.add("translate-x-1");
+        knob.classList.remove("translate-x-5");
+        toggle.setAttribute("aria-pressed", "false");
+      }
+
+      const { ordered, map } = chartIndexMap();
+      const chartIdSet = new Set(ordered.map((c) => c.id));
+
+      // Enforce invariant on render as well
+      for (const it of getAllItems()) {
+        if (state.checked[it.id] && !itemHasAtLeastOneRef(it.id, chartIdSet)) {
+          state.checked[it.id] = false;
+        }
+      }
+
+      const host = $("sections");
+      host.innerHTML = "";
+
+      for (const sec of RUBRIC) {
+        const visibleItems = sec.items.filter(isVisibleItem);
+        const { checked, total } = sectionStats(sec);
+        if (visibleItems.length === 0) continue;
+
+        const expanded = !!state.expanded[sec.id];
+
+        const sectionEl = document.createElement("div");
+        sectionEl.className = "rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden";
+
+        const header = document.createElement("button");
+        header.className = "w-full text-left px-6 py-5 hover:bg-slate-50 transition flex items-start justify-between gap-3";
+        header.type = "button";
+        header.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="text-lg font-semibold">${sec.title}</div>
+              <span class="text-xs rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">${checked}/${total}</span>
+            </div>
+            <div class="text-sm text-slate-500 mt-1">${sec.subtitle || ""}</div>
+          </div>
+          <div class="mt-1 text-slate-400">${expanded ?
+            `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>` :
+            `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>`
+          }</div>
+        `;
+        header.addEventListener("click", () => {
+          state.expanded[sec.id] = !state.expanded[sec.id];
+          saveState();
+          render();
+        });
+
+        const body = document.createElement("div");
+        body.className = expanded ? "px-6 pb-6" : "hidden";
+
+        const list = document.createElement("div");
+        list.className = "mt-4 grid grid-cols-1 md:grid-cols-2 gap-3";
+
+        for (const it of visibleItems) {
+          const checkedNow = !!state.checked[it.id];
+          const selectedCharts = (state.itemCharts[it.id] || []).filter((cid) => map.has(cid));
+          const numbers = selectedCharts.map((cid) => map.get(cid)).filter(Boolean).sort((a, b) => a - b);
+
+          const footnotes = numbers.length
+            ? numbers.map((n) => `<sup class="text-[11px] font-semibold text-slate-600 ml-1">[${n}]</sup>`).join("")
+            : "";
+
+          const row = document.createElement("div");
+          row.className = "rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50";
+
+          const optionsHtml = (ordered.length === 0)
+            ? `<div class="text-xs text-slate-600">Add charts above to reference them here.</div>`
+            : ordered.map((c) => {
+                const n = map.get(c.id);
+                const isOn = (state.itemCharts[it.id] || []).includes(c.id);
+                return renderRefOption(it.id, c, n, isOn);
+              }).join("\n");
+
+          const needsRefWarning = checkedNow && numbers.length === 0;
+
+          row.innerHTML = `
+            <div class="flex items-start gap-3">
+              <label class="flex items-start gap-3 flex-1 cursor-pointer">
+                <input data-item="${it.id}" type="checkbox" class="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300" ${checkedNow ? "checked" : ""} />
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-slate-900">
+                    ${escapeHtml(it.label)}
+                    ${footnotes}
+                  </div>
+                  <div class="text-xs text-slate-500">+${it.points ?? 1} point</div>
+                  ${needsRefWarning ? `<div class="mt-2 text-xs text-rose-700">Needs at least 1 reference to remain Present.</div>` : ""}
+                </div>
+              </label>
+
+              <div class="flex flex-col items-end gap-2">
+                <div>
+                  ${checkedNow ?
+                    `<span class="inline-flex items-center gap-1 text-xs rounded-full bg-emerald-50 text-emerald-700 px-2 py-1 border border-emerald-100">
+                      <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                      Present
+                    </span>`
+                    :
+                    `<span class="inline-flex items-center gap-1 text-xs rounded-full bg-slate-50 text-slate-600 px-2 py-1 border border-slate-200">
+                      <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>
+                      Missing
+                    </span>`
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Simple footnote-style references (accordion) -->
+            <details class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+                <div class="text-xs font-semibold text-slate-700">
+                  References
+                  <span class="ml-2 rounded-full bg-white border border-slate-200 px-2 py-0.5 text-slate-600">${numbers.length}</span>
+                </div>
+                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+              </summary>
+
+              <div class="mt-3 space-y-2">
+                ${optionsHtml}
+              </div>
+            </details>
+          `;
+
+          // Present checkbox handler (requires ≥1 reference)
+          const checkbox = row.querySelector("input[type=checkbox][data-item]");
+          checkbox.addEventListener("change", (e) => {
+            const next = !!e.target.checked;
+            if (next) {
+              const hasRef = itemHasAtLeastOneRef(it.id, chartIdSet);
+              if (!hasRef) {
+                e.target.checked = false;
+                showToast("Add at least 1 reference before marking this item Present.");
+                return;
+              }
+            }
+            state.checked[it.id] = next;
+            saveState();
+            render();
+          });
+
+          // Reference checkbox handlers
+          row.querySelectorAll("input[type=checkbox][data-ref-item]").forEach((cb) => {
+            cb.addEventListener("change", (e) => {
+              const itemId = e.target.getAttribute("data-ref-item");
+              const chartId = e.target.getAttribute("data-ref-chart");
+              state.itemCharts[itemId] = state.itemCharts[itemId] || [];
+              const set = new Set(state.itemCharts[itemId]);
+              if (e.target.checked) set.add(chartId); else set.delete(chartId);
+              state.itemCharts[itemId] = Array.from(set);
+
+              // If they removed the last reference, auto-uncheck Present.
+              if (state.checked[itemId] && !itemHasAtLeastOneRef(itemId, chartIdSet)) {
+                state.checked[itemId] = false;
+              }
+
+              saveState();
+              render();
+            });
+          });
+
+          list.appendChild(row);
+        }
+
+        body.appendChild(list);
+        sectionEl.appendChild(header);
+        sectionEl.appendChild(body);
+        host.appendChild(sectionEl);
+      }
+
+      saveState();
+    }
+
+    // -------------------------------
+    // Event wiring
+    // -------------------------------
+    $("meta_patients").value = state.meta.patients ?? "0";
+    $("meta_encounters").value = state.meta.encounters ?? "0";
+    $("meta_severity").value = state.meta.severity ?? "";
+
+    $("meta_patients").addEventListener("input", (e) => { state.meta.patients = e.target.value; saveState(); });
+    $("meta_encounters").addEventListener("input", (e) => { state.meta.encounters = e.target.value; saveState(); });
+    $("meta_severity").addEventListener("input", (e) => { state.meta.severity = e.target.value; saveState(); });
+
+    $("missingToggle").addEventListener("click", () => {
+      state.filters.missingOnly = !state.filters.missingOnly;
+      saveState();
+      render();
+    });
+
+    // -------------------------------
+    // Tests (console)
+    // -------------------------------
+    function runTests() {
+      try {
+        console.assert(computeTier(0).name === "Foundational", "Tier 0% should be Foundational");
+        console.assert(computeTier(33).name === "Foundational", "Tier 33% should be Foundational");
+        console.assert(computeTier(34).name === "Proficient", "Tier 34% should be Proficient");
+        console.assert(computeTier(66).name === "Proficient", "Tier 66% should be Proficient");
+        console.assert(computeTier(67).name === "Advanced", "Tier 67% should be Advanced");
+
+        // Invariant: checked item must have >=1 ref
+        const chartSet = new Set(state.charts.map((c) => c.id));
+        for (const it of getAllItems()) {
+          if (state.checked[it.id]) {
+            console.assert(itemHasAtLeastOneRef(it.id, chartSet), `Checked item ${it.id} must have a reference`);
+          }
+        }
+
+        // chart numbering stable by createdAt
+        const saved = state.charts;
+        state.charts = [
+          { id: "a", chartId: "X", createdAt: 1 },
+          { id: "b", chartId: "Y", createdAt: 2 },
+        ];
+        const { ordered, map } = chartIndexMap();
+        console.assert(ordered.length === 2, "Chart map should have 2 charts");
+        console.assert(map.get("a") === 1 && map.get("b") === 2, "Chart numbering should be 1,2");
+        state.charts = saved;
+      } catch (e) {
+        console.warn("Tests failed", e);
+      }
+    }
+
+    // Initial
+    render();
+    runTests();
+  </script>
+</body>
+</html>
